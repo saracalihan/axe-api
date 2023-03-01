@@ -154,6 +154,7 @@ export interface IModelService {
   events: Record<HookFunctionTypes, (params: IHookParameter) => void>;
   isRecursive: boolean;
   children: IModelService[];
+  queryLimits: IQueryLimitConfig[];
   serialize: SerializationFunction | null;
 
   setColumns(columns: IColumn[]): void;
