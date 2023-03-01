@@ -100,3 +100,33 @@ export enum AxeErrorCode {
   UNDEFINED_HOOK_MODEL_RELATION = "UNDEFINED_HOOK_MODEL_RELATION",
   UNACCEPTABLE_HOOK_FILE = "UNACCEPTABLE_HOOK_FILE",
 }
+
+export enum QueryFeatureType {
+  Allow = "Allow",
+  Deny = "Deny",
+}
+
+export enum QueryFeature {
+  Fields = "fields",
+  Sorting = "sorting",
+  Limits = "limits",
+  WhereAll = "where.*",
+  WhereEqual = "where.equal",
+  WhereNotEqual = "where.notEqual",
+  WhereGt = "where.gt",
+  WhereGte = "where.gte",
+  WhereLt = "where.lt",
+  WhereLte = "where.lte",
+  WhereLike = "where.like",
+  WhereNotLike = "where.notLike",
+  WhereIn = "where.in",
+  WhereMotIn = "where.notIn",
+  WhereBetween = "where.between",
+  WhereNotBetween = "where.notBetween",
+  WhereNull = "where.null",
+  WhereNotNull = "where.notNull",
+  Trashed = "trashed",
+  WithAll = "with.*",
+  WithHasOne = "with.hasOne",
+  WithHasMany = "with.hasMany",
+}

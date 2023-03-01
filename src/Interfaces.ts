@@ -11,6 +11,8 @@ import {
   SortTypes,
   ConditionTypes,
   DependencyTypes,
+  QueryFeature,
+  QueryFeatureType,
 } from "./Enums";
 import Model from "./Model";
 import { SerializationFunction } from "./Types";
@@ -33,6 +35,16 @@ interface IHandlerBasedSerializer {
   serializer: ((data: any, request: Request) => void)[];
 }
 
+export interface IQueryLimitConfig {
+  feature: QueryFeature;
+  type: QueryFeatureType;
+  field: string | null;
+}
+
+export interface IQueryConfig {
+  limits: Array<IQueryLimitConfig[]>;
+}
+
 export interface IVersionConfig {
   transaction:
     | boolean
@@ -43,6 +55,7 @@ export interface IVersionConfig {
     | IHandlerBasedSerializer[];
   supportedLanguages: string[];
   defaultLanguage: string;
+  query: IQueryConfig;
 }
 
 export interface IApplicationConfig extends IConfig {
@@ -149,6 +162,7 @@ export interface IModelService {
     hookFunctionType: HookFunctionTypes,
     data: (params: IHookParameter) => void
   ): void;
+  setQueryLimits(limits: IQueryLimitConfig[]): void;
   setSerialization(callback: SerializationFunction): void;
 }
 

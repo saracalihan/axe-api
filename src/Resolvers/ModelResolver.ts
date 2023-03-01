@@ -34,6 +34,7 @@ class ModelResolver {
     await this.setModelHooks(modelList, Extensions.Hooks);
     await this.setModelHooks(modelList, Extensions.Events);
     await this.setModelSerializations(modelList);
+    await this.setModelQueryLimits(modelList);
 
     this.version.modelList = modelList;
 
@@ -206,6 +207,15 @@ class ModelResolver {
         const file = serializations[fileName];
         model.setSerialization(file.default as any as SerializationFunction);
       }
+    }
+  }
+
+  private async setModelQueryLimits(modelList: ModelListService) {
+    for (const model of modelList.get()) {
+      model.setQueryLimits([
+        ...this.version.config.query.limits.flat(),
+        ...model.instance.limits.flat(),
+      ]);
     }
   }
 

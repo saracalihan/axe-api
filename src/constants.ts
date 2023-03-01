@@ -1,4 +1,4 @@
-import { HandlerTypes } from "./Enums";
+import { HandlerTypes, QueryFeature } from "./Enums";
 
 export const LOG_COLORS = {
   fgBlack: "\x1b[30m",
@@ -48,6 +48,7 @@ export const DEFAULT_METHODS_OF_MODELS: string[] = [
   "deletedAtColumn",
   "transaction",
   "ignore",
+  "limits",
   "getFillableFields",
   "getValidationRules",
 ];
@@ -95,4 +96,44 @@ export const API_ROUTE_TEMPLATES = {
     resource: string,
     primaryKey: string
   ) => `/${prefix}/${parentUrl}${resource}/:${primaryKey}/force`,
+};
+
+export const QueryFeatureMap: Record<QueryFeature, Array<QueryFeature>> = {
+  [QueryFeature.Fields]: [QueryFeature.Fields],
+  [QueryFeature.Sorting]: [QueryFeature.Sorting],
+  [QueryFeature.Limits]: [QueryFeature.Limits],
+  [QueryFeature.WhereAll]: [
+    QueryFeature.WhereEqual,
+    QueryFeature.WhereNotEqual,
+    QueryFeature.WhereGt,
+    QueryFeature.WhereGte,
+    QueryFeature.WhereLt,
+    QueryFeature.WhereLte,
+    QueryFeature.WhereLike,
+    QueryFeature.WhereNotLike,
+    QueryFeature.WhereIn,
+    QueryFeature.WhereMotIn,
+    QueryFeature.WhereBetween,
+    QueryFeature.WhereNotBetween,
+    QueryFeature.WhereNull,
+    QueryFeature.WhereNotNull,
+  ],
+  [QueryFeature.WhereEqual]: [QueryFeature.WhereEqual],
+  [QueryFeature.WhereNotEqual]: [QueryFeature.WhereNotEqual],
+  [QueryFeature.WhereGt]: [QueryFeature.WhereGt],
+  [QueryFeature.WhereGte]: [QueryFeature.WhereGte],
+  [QueryFeature.WhereLt]: [QueryFeature.WhereLt],
+  [QueryFeature.WhereLte]: [QueryFeature.WhereLte],
+  [QueryFeature.WhereLike]: [QueryFeature.WhereLike],
+  [QueryFeature.WhereNotLike]: [QueryFeature.WhereNotLike],
+  [QueryFeature.WhereIn]: [QueryFeature.WhereIn],
+  [QueryFeature.WhereMotIn]: [QueryFeature.WhereMotIn],
+  [QueryFeature.WhereBetween]: [QueryFeature.WhereBetween],
+  [QueryFeature.WhereNotBetween]: [QueryFeature.WhereNotBetween],
+  [QueryFeature.WhereNull]: [QueryFeature.WhereNull],
+  [QueryFeature.WhereNotNull]: [QueryFeature.WhereNotNull],
+  [QueryFeature.Trashed]: [QueryFeature.Trashed],
+  [QueryFeature.WithAll]: [QueryFeature.WithHasOne, QueryFeature.WithHasMany],
+  [QueryFeature.WithHasOne]: [QueryFeature.WithHasOne],
+  [QueryFeature.WithHasMany]: [QueryFeature.WithHasMany],
 };
