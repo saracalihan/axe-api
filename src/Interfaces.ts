@@ -38,7 +38,7 @@ interface IHandlerBasedSerializer {
 export interface IQueryLimitConfig {
   feature: QueryFeature;
   type: QueryFeatureType;
-  field: string | null;
+  key: string | null;
 }
 
 export interface IQueryConfig {

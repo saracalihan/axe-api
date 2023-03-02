@@ -5,21 +5,21 @@ import { QueryFeatureMap } from "../constants";
 const generatePermission = (
   type: QueryFeatureType,
   feature: QueryFeature,
-  fields: string[] | null[] = []
+  keys: string[] | null[] = []
 ): IQueryLimitConfig[] => {
   const features = QueryFeatureMap[feature];
 
-  if (fields.length === 0) {
-    fields = [null];
+  if (keys.length === 0) {
+    keys = [null];
   }
 
   return features
     .map((subFeature) => {
-      return fields.map((field) => {
+      return keys.map((key) => {
         return {
           type,
           feature: subFeature,
-          field,
+          key,
         };
       });
     })
@@ -28,14 +28,14 @@ const generatePermission = (
 
 export const allow = (
   feature: QueryFeature,
-  fields: string[] = []
+  keys: string[] = []
 ): IQueryLimitConfig[] => {
-  return generatePermission(QueryFeatureType.Allow, feature, fields);
+  return generatePermission(QueryFeatureType.Allow, feature, keys);
 };
 
 export const deny = (
   feature: QueryFeature,
-  fields: string[] = []
+  keys: string[] = []
 ): IQueryLimitConfig[] => {
-  return generatePermission(QueryFeatureType.Deny, feature, fields);
+  return generatePermission(QueryFeatureType.Deny, feature, keys);
 };

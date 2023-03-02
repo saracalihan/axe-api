@@ -99,7 +99,7 @@ export const API_ROUTE_TEMPLATES = {
 };
 
 export const QueryFeatureMap: Record<QueryFeature, Array<QueryFeature>> = {
-  [QueryFeature.Fields]: [QueryFeature.Fields],
+  [QueryFeature.FieldsAll]: [QueryFeature.FieldsAll],
   [QueryFeature.Sorting]: [QueryFeature.Sorting],
   [QueryFeature.Limits]: [QueryFeature.Limits],
   [QueryFeature.WhereAll]: [
