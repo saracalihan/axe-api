@@ -1,18 +1,26 @@
 import { FolderResolver, FileResolver, ModelResolver } from "./Resolvers";
-import { IApplicationConfig, IConfig, IFolders } from "./Interfaces";
 import dotenv from "dotenv";
-import express, { Request, Response } from "express";
 import knex from "knex";
 import schemaInspector from "knex-schema-inspector";
 import { attachPaginate } from "knex-paginate";
 import { ModelTreeBuilder, RouterBuilder } from "./Builders";
 import HandlerFactory from "./Handlers/HandlerFactory";
 import {
+  IApplicationConfig,
+  IConfig,
+  IFolders,
+  IRequest,
+  IResponse,
+} from "./Interfaces";
+import {
   DocumentationService,
   LogService,
   IoCService,
   SchemaValidatorService,
 } from "./Services";
+import { Frameworks } from "./Enums";
+import ExpressFramework from "./Frameworks/ExpressFramework";
+import FastifyFramework from "./Frameworks/FastifyFramework";
 
 class Server {
   async start(appFolder: string) {
@@ -22,7 +30,7 @@ class Server {
     const config = await fileResolver.resolve<IConfig>(folders.Config);
     const models = await fileResolver.resolve<IConfig>(folders.Models);
     await this.bindDependencies(folders, config, models);
-    await this.loadExpress();
+    await this.loadFramework();
     await this.analyzeModels();
     await this.listen();
   }
@@ -42,9 +50,18 @@ class Server {
       attachPaginate();
       return database;
     });
-    IoCService.singleton("App", async () => {
-      return express();
+    IoCService.singleton("Framework", async () => {
+      let framework = null, frameworkName = (config.Application as IApplicationConfig).framework || Frameworks.Express;
+      if (frameworkName == Frameworks.Fastify) {
+        framework = new FastifyFramework();
+      } else {
+        framework = new ExpressFramework();
+      }
+
+      return framework;
     });
+
+    IoCService.singleton("App", async () => await IoCService.use("Framework"));
     IoCService.singleton("HandlerFactory", () => {
       return new HandlerFactory();
     });
@@ -61,10 +78,23 @@ class Server {
     });
   }
 
-  private async loadExpress() {
+  private async loadFramework() {
     const app = await IoCService.use("App");
-    app.use(express.urlencoded({ extended: true }));
-    app.use(express.json());
+    const framework = await IoCService.use("Framework");
+    const logger = await IoCService.useByType<LogService>("LogService");
+
+    // Set global middlewares for axe-api
+    switch (framework._name) {
+      default:
+      case Frameworks.Express:
+        const { urlencoded, json } = await import("express");
+        app.use(urlencoded({ extended: true }));
+        app.use(json());
+        break;
+      case Frameworks.Fastify:
+        break;
+    }
+    logger.info(`${app._name} has been initialized`);
   }
 
   private async analyzeModels() {
@@ -80,7 +110,7 @@ class Server {
     const logger = await IoCService.useByType<LogService>("LogService");
 
     if (config.Application.env === "development") {
-      app.get("/docs", async (req: Request, res: Response) => {
+      app.get("/docs", async (req: IRequest, res: IResponse) => {
         const docs = await IoCService.useByType<DocumentationService>(
           "DocumentationService"
         );
@@ -90,7 +120,7 @@ class Server {
           modelTree,
         });
       });
-      app.get("/docs/routes", async (req: Request, res: Response) => {
+      app.get("/docs/routes", async (req: IRequest, res: IResponse) => {
         const docs = await IoCService.useByType<DocumentationService>(
           "DocumentationService"
         );

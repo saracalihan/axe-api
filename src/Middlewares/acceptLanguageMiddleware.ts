@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction } from "express";
 import { IoCService } from "../Services";
-import { IApplicationConfig } from "../Interfaces";
+import { IApplicationConfig, IRequest, IResponse } from "../Interfaces";
 import { AcceptLanguageResolver } from "../Resolvers";
 
-export default async (req: Request, res: Response, next: NextFunction) => {
+export default async (req: IRequest, res: IResponse, next: NextFunction) => {
   // Application configuration is need for the default setting.
   const configs = await IoCService.use("Config");
   const application = configs.Application as IApplicationConfig;

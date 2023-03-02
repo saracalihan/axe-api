@@ -1,7 +1,7 @@
 import pluralize from "pluralize";
 import { StatusCodes } from "http-status-codes";
 import { Knex } from "knex";
-import { Express, Request, Response, NextFunction } from "express";
+import { NextFunction } from "express";
 import { paramCase, camelCase } from "change-case";
 import { GeneralHookResolver, TransactionResolver } from "../Resolvers";
 import {
@@ -9,6 +9,9 @@ import {
   IModelService,
   IRelation,
   IRequestPack,
+  IRequest,
+  IResponse,
+  IFramework,
 } from "../Interfaces";
 import { API_ROUTE_TEMPLATES } from "../constants";
 import { HandlerTypes, Relationships, HttpMethods } from "../Enums";
@@ -24,7 +27,7 @@ import { acceptLanguageMiddleware } from "../Middlewares";
 
 class RouterBuilder {
   async build() {
-    const app = await IoCService.useByType<Express>("App");
+    const app = await IoCService.useByType<IFramework>("App");
     const logger = await IoCService.useByType<LogService>("LogService");
     const modelTree = await IoCService.useByType<IModelService[]>("ModelTree");
     const modelList = await IoCService.useByType<ModelListService>(
@@ -38,7 +41,7 @@ class RouterBuilder {
 
     await this.createRoutesByModelTree(modelTree, modelList);
 
-    logger.info("Express routes have been created.");
+    logger.info(`${app._name} routes have been created.`);
 
     if (generalHooks.onAfterInit) {
       generalHooks.onAfterInit(app);
@@ -184,7 +187,7 @@ class RouterBuilder {
   private async addExpressRoute(
     handlerType: HandlerTypes,
     url: string,
-    middlewares: ((req: Request, res: Response, next: NextFunction) => void)[],
+    middlewares: ((req: IRequest, res: IResponse, next: NextFunction) => void)[],
     model: IModelService,
     parentModel: IModelService | null,
     relation: IRelation | null
@@ -192,8 +195,8 @@ class RouterBuilder {
     const docs = await IoCService.useByType<DocumentationService>(
       "DocumentationService"
     );
-    const app = await IoCService.useByType<Express>("App");
-    const handler = (req: Request, res: Response) => {
+    const app = await IoCService.useByType<IFramework>("App");
+    const handler = (req: IRequest, res: IResponse) => {
       this.requestHandler(handlerType, req, res, model, parentModel, relation);
     };
 
@@ -237,8 +240,8 @@ class RouterBuilder {
 
   private async requestHandler(
     handlerType: HandlerTypes,
-    req: Request,
-    res: Response,
+    req: IRequest,
+    res: IResponse,
     model: IModelService,
     parentModel: IModelService | null,
     relation: IRelation | null
@@ -281,7 +284,7 @@ class RouterBuilder {
     }
   }
 
-  private sendErrorAsResponse(res: Response, error: any) {
+  private sendErrorAsResponse(res: IResponse, error: any) {
     const type: string | undefined = error.type;
 
     switch (type) {

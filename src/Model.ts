@@ -1,5 +1,5 @@
 import pluralize from "pluralize";
-import { Request, Response, NextFunction } from "express";
+import { NextFunction } from "express";
 import { snakeCase } from "snake-case";
 import {
   IRelation,
@@ -7,6 +7,8 @@ import {
   IMethodBaseValidations,
   IHandlerBaseMiddleware,
   IHandlerBasedTransactionConfig,
+  IRequest,
+  IResponse,
 } from "./Interfaces";
 import { Relationships, HandlerTypes, HttpMethods } from "./Enums";
 import { DEFAULT_HANDLERS } from "./constants";
@@ -33,7 +35,7 @@ class Model {
   }
 
   get middlewares():
-    | ((req: Request, res: Response, next: NextFunction) => void)[]
+    | ((req: IRequest, res: IResponse, next: NextFunction) => void)[]
     | IHandlerBaseMiddleware[]
     | IHandlerBaseMiddleware {
     return [];
@@ -109,10 +111,10 @@ class Model {
 
   getMiddlewares(
     handlerType: HandlerTypes
-  ): ((req: Request, res: Response, next: NextFunction) => void)[] {
+  ): ((req: IRequest, res: IResponse, next: NextFunction) => void)[] {
     const results: ((
-      req: Request,
-      res: Response,
+      req: IRequest,
+      res: IResponse,
       next: NextFunction
     ) => void)[] = [];
     const middlewares = this.middlewares;
@@ -173,7 +175,7 @@ class Model {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  serialize(data: any, request: Request) {
+  serialize(data: any, request: IRequest) {
     return data;
   }
 

@@ -89,3 +89,8 @@ export enum TimestampColumns {
   CREATED_AT = "createdAtColumn",
   UPDATED_AT = "updatedAtColumn",
 }
+
+export enum Frameworks {
+  Express = "express",
+  Fastify = "fastify",
+}
