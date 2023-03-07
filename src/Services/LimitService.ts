@@ -59,7 +59,7 @@ export const valideteQueryFeature = (
     );
 
     if (keyRules.length > 0) {
-      const lastKeyRule = keyRules.at(-1);
+      const lastKeyRule = keyRules[keyRules.length - 1];
       if (lastKeyRule?.type === QueryFeatureType.Deny) {
         throw new ApiError(
           `Unsupported query feature${errorDetail}: ${feature.toString()} [${key}]`
@@ -75,7 +75,7 @@ export const valideteQueryFeature = (
     );
   }
 
-  const lastRule = rules.at(-1);
+  const lastRule = rules[rules.length - 1];
   if (lastRule?.type === QueryFeatureType.Deny) {
     throw new ApiError(
       `Unsupported query feature${errorDetail}: ${feature.toString()}`
