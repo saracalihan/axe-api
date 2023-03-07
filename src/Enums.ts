@@ -120,7 +120,7 @@ export enum QueryFeature {
   WhereLike = "where.like",
   WhereNotLike = "where.notLike",
   WhereIn = "where.in",
-  WhereMotIn = "where.notIn",
+  WhereNotIn = "where.notIn",
   WhereBetween = "where.between",
   WhereNotBetween = "where.notBetween",
   WhereNull = "where.null",

@@ -212,9 +212,17 @@ class ModelResolver {
 
   private async setModelQueryLimits(modelList: ModelListService) {
     for (const model of modelList.get()) {
+      // We should use the full field name like `users.name`
+      const modelLimits = model.instance.limits.flat().map((item) => {
+        if (item.key) {
+          item.key = `${model.instance.table}.${item.key}`;
+        }
+        return { ...item };
+      });
+
       model.setQueryLimits([
         ...this.version.config.query.limits.flat(),
-        ...model.instance.limits.flat(),
+        ...modelLimits,
       ]);
     }
   }

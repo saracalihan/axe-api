@@ -1,4 +1,4 @@
-import { HandlerTypes, QueryFeature } from "./Enums";
+import { ConditionTypes, HandlerTypes, QueryFeature } from "./Enums";
 
 export const LOG_COLORS = {
   fgBlack: "\x1b[30m",
@@ -112,7 +112,7 @@ export const QueryFeatureMap: Record<QueryFeature, Array<QueryFeature>> = {
     QueryFeature.WhereLike,
     QueryFeature.WhereNotLike,
     QueryFeature.WhereIn,
-    QueryFeature.WhereMotIn,
+    QueryFeature.WhereNotIn,
     QueryFeature.WhereBetween,
     QueryFeature.WhereNotBetween,
     QueryFeature.WhereNull,
@@ -127,7 +127,7 @@ export const QueryFeatureMap: Record<QueryFeature, Array<QueryFeature>> = {
   [QueryFeature.WhereLike]: [QueryFeature.WhereLike],
   [QueryFeature.WhereNotLike]: [QueryFeature.WhereNotLike],
   [QueryFeature.WhereIn]: [QueryFeature.WhereIn],
-  [QueryFeature.WhereMotIn]: [QueryFeature.WhereMotIn],
+  [QueryFeature.WhereNotIn]: [QueryFeature.WhereNotIn],
   [QueryFeature.WhereBetween]: [QueryFeature.WhereBetween],
   [QueryFeature.WhereNotBetween]: [QueryFeature.WhereNotBetween],
   [QueryFeature.WhereNull]: [QueryFeature.WhereNull],
@@ -136,4 +136,21 @@ export const QueryFeatureMap: Record<QueryFeature, Array<QueryFeature>> = {
   [QueryFeature.WithAll]: [QueryFeature.WithHasOne, QueryFeature.WithHasMany],
   [QueryFeature.WithHasOne]: [QueryFeature.WithHasOne],
   [QueryFeature.WithHasMany]: [QueryFeature.WithHasMany],
+};
+
+export const ConditionQueryFeatureMap: Record<ConditionTypes, QueryFeature> = {
+  [ConditionTypes.NotNull]: QueryFeature.WhereNotNull,
+  [ConditionTypes.Null]: QueryFeature.WhereNull,
+  [ConditionTypes["="]]: QueryFeature.WhereEqual,
+  [ConditionTypes["<>"]]: QueryFeature.WhereNotEqual,
+  [ConditionTypes[">"]]: QueryFeature.WhereGt,
+  [ConditionTypes[">="]]: QueryFeature.WhereGte,
+  [ConditionTypes["<"]]: QueryFeature.WhereLt,
+  [ConditionTypes["<="]]: QueryFeature.WhereLte,
+  [ConditionTypes["LIKE"]]: QueryFeature.WhereLike,
+  [ConditionTypes["NOT LIKE"]]: QueryFeature.WhereNotLike,
+  [ConditionTypes["In"]]: QueryFeature.WhereIn,
+  [ConditionTypes["NotIn"]]: QueryFeature.WhereNotIn,
+  [ConditionTypes["Between"]]: QueryFeature.WhereBetween,
+  [ConditionTypes["NotBetween"]]: QueryFeature.WhereNotBetween,
 };

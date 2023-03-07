@@ -17,6 +17,9 @@ import {
 import { Knex } from "knex";
 import ApiError from "../Exceptions/ApiError";
 import { WithQueryResolver } from "../Resolvers";
+import { ConditionQueryFeatureMap } from "../constants";
+
+const DEFAULT_PER_PAGE = 10;
 
 class QueryService {
   model: IModelService;
@@ -238,6 +241,10 @@ class QueryService {
         : false,
     };
 
+    if (query.per_page !== DEFAULT_PER_PAGE) {
+      this.valideteQueryFeature(QueryFeature.Limits);
+    }
+
     this.addRelationColumns(query.with);
 
     return query;
@@ -261,7 +268,7 @@ class QueryService {
     const value = parseInt(content);
 
     if (isNaN(value) || value <= 1 || value > 10000) {
-      return 10;
+      return DEFAULT_PER_PAGE;
     }
 
     return value;
@@ -442,6 +449,11 @@ class QueryService {
       where.relation = relation;
       where.field = field;
     }
+
+    this.valideteQueryFeature(
+      ConditionQueryFeatureMap[where.condition],
+      `${where.table}.${where.field}`
+    );
 
     this.shouldBeAcceptableColumn(where.field);
     this.usedConditionColumns.push(`${where.table}.${where.field}`);
