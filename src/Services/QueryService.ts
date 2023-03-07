@@ -3,7 +3,6 @@ import {
   ConditionTypes,
   SortTypes,
   QueryFeature,
-  QueryFeatureType,
 } from "../Enums";
 import {
   IRawQuery,
@@ -18,6 +17,7 @@ import { Knex } from "knex";
 import ApiError from "../Exceptions/ApiError";
 import { WithQueryResolver } from "../Resolvers";
 import { ConditionQueryFeatureMap } from "../constants";
+import { valideteQueryFeature } from "./LimitService";
 
 const DEFAULT_PER_PAGE = 10;
 
@@ -39,7 +39,7 @@ class QueryService {
   applyFields(query: Knex.QueryBuilder, fields: string[]) {
     // Users should be able to select some fields to show.
     if (fields.length === 0 || (fields.length === 1 && fields[0] === "*")) {
-      this.valideteQueryFeature(QueryFeature.FieldsAll);
+      valideteQueryFeature(this.model, QueryFeature.FieldsAll);
       query.select(`${this.model.instance.table}.*`);
     } else {
       const fullPathFields = fields.map((field) => {
@@ -57,10 +57,10 @@ class QueryService {
       return;
     }
 
-    this.valideteQueryFeature(QueryFeature.Sorting);
+    valideteQueryFeature(this.model, QueryFeature.Sorting);
 
     sort.forEach((item) => {
-      this.valideteQueryFeature(QueryFeature.Sorting, item.name);
+      valideteQueryFeature(this.model, QueryFeature.Sorting, item.name);
       query.orderBy(item.name, item.type);
     });
   }
@@ -242,7 +242,7 @@ class QueryService {
     };
 
     if (query.per_page !== DEFAULT_PER_PAGE) {
-      this.valideteQueryFeature(QueryFeature.Limits);
+      valideteQueryFeature(this.model, QueryFeature.Limits);
     }
 
     this.addRelationColumns(query.with);
@@ -450,7 +450,8 @@ class QueryService {
       where.field = field;
     }
 
-    this.valideteQueryFeature(
+    valideteQueryFeature(
+      this.model,
       ConditionQueryFeatureMap[where.condition],
       `${where.table}.${where.field}`
     );
@@ -525,39 +526,6 @@ class QueryService {
       throw new ApiError(
         `You have to define the column specefically: ${field}`
       );
-    }
-  }
-
-  private valideteQueryFeature(
-    feature: QueryFeature,
-    key: string | null = null
-  ) {
-    const rules = this.model.queryLimits.filter(
-      (limit) => limit.feature === feature && limit.key === null
-    );
-
-    if (key) {
-      const keyRules = this.model.queryLimits.filter(
-        (limit) => limit.feature === feature && limit.key === key
-      );
-
-      if (keyRules.length > 0) {
-        const lastKeyRule = keyRules.at(-1);
-        if (lastKeyRule?.type === QueryFeatureType.Deny) {
-          throw new ApiError(
-            `Unsupported query feature: ${feature.toString()} [${key}]`
-          );
-        }
-      }
-    }
-
-    if (rules.length === 0) {
-      throw new ApiError(`Unsupported query feature: ${feature.toString()}`);
-    }
-
-    const lastRule = rules.at(-1);
-    if (lastRule?.type === QueryFeatureType.Deny) {
-      throw new ApiError(`Unsupported query feature: ${feature.toString()}`);
     }
   }
 }

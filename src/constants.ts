@@ -1,4 +1,9 @@
-import { ConditionTypes, HandlerTypes, QueryFeature } from "./Enums";
+import {
+  ConditionTypes,
+  HandlerTypes,
+  QueryFeature,
+  Relationships,
+} from "./Enums";
 
 export const LOG_COLORS = {
   fgBlack: "\x1b[30m",
@@ -99,6 +104,28 @@ export const API_ROUTE_TEMPLATES = {
 };
 
 export const QueryFeatureMap: Record<QueryFeature, Array<QueryFeature>> = {
+  [QueryFeature.All]: [
+    QueryFeature.FieldsAll,
+    QueryFeature.Sorting,
+    QueryFeature.Limits,
+    QueryFeature.WhereEqual,
+    QueryFeature.WhereNotEqual,
+    QueryFeature.WhereGt,
+    QueryFeature.WhereGte,
+    QueryFeature.WhereLt,
+    QueryFeature.WhereLte,
+    QueryFeature.WhereLike,
+    QueryFeature.WhereNotLike,
+    QueryFeature.WhereIn,
+    QueryFeature.WhereNotIn,
+    QueryFeature.WhereBetween,
+    QueryFeature.WhereNotBetween,
+    QueryFeature.WhereNull,
+    QueryFeature.WhereNotNull,
+    QueryFeature.Trashed,
+    QueryFeature.WithHasOne,
+    QueryFeature.WithHasMany,
+  ],
   [QueryFeature.FieldsAll]: [QueryFeature.FieldsAll],
   [QueryFeature.Sorting]: [QueryFeature.Sorting],
   [QueryFeature.Limits]: [QueryFeature.Limits],
@@ -153,4 +180,9 @@ export const ConditionQueryFeatureMap: Record<ConditionTypes, QueryFeature> = {
   [ConditionTypes["NotIn"]]: QueryFeature.WhereNotIn,
   [ConditionTypes["Between"]]: QueryFeature.WhereBetween,
   [ConditionTypes["NotBetween"]]: QueryFeature.WhereNotBetween,
+};
+
+export const RelationQueryFeatureMap: Record<Relationships, QueryFeature> = {
+  [Relationships.HAS_ONE]: QueryFeature.WithHasOne,
+  [Relationships.HAS_MANY]: QueryFeature.WithHasMany,
 };

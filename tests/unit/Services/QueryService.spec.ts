@@ -1,6 +1,11 @@
 import { describe, expect, jest, test, beforeEach } from "@jest/globals";
-import { ConditionTypes, Relationships, SortTypes } from "../../../src/Enums";
-import { ModelService, QueryService } from "../../../src/Services";
+import {
+  ConditionTypes,
+  QueryFeature,
+  Relationships,
+  SortTypes,
+} from "../../../src/Enums";
+import { allow, ModelService, QueryService } from "../../../src/Services";
 import {
   IRelation,
   IWhere,
@@ -22,6 +27,13 @@ userService.relations = [
     foreignKey: "user_id",
   },
 ] as IRelation[];
+userService.queryLimits = [
+  allow(QueryFeature.FieldsAll),
+  allow(QueryFeature.WhereIn),
+  allow(QueryFeature.WhereNull),
+  allow(QueryFeature.WhereLike),
+  allow(QueryFeature.Limits),
+].flat();
 
 const postService = new ModelService("Post", new Post());
 const commentService = new ModelService("Comment", new Comment());

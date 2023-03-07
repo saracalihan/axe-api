@@ -107,6 +107,7 @@ export enum QueryFeatureType {
 }
 
 export enum QueryFeature {
+  All = "all",
   FieldsAll = "fieldsAll",
   Sorting = "sorting",
   Limits = "limits",

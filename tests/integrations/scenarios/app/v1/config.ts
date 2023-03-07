@@ -6,12 +6,7 @@ const config: IVersionConfig = {
   supportedLanguages: ["en", "de"],
   defaultLanguage: "en",
   query: {
-    limits: [
-      allow(QueryFeature.FieldsAll),
-      allow(QueryFeature.WithHasOne),
-      allow(QueryFeature.Sorting),
-      allow(QueryFeature.WhereAll),
-    ],
+    limits: [allow(QueryFeature.All)],
   },
 };
 

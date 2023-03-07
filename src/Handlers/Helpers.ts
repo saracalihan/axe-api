@@ -15,10 +15,13 @@ import {
   Relationships,
   HookFunctionTypes,
   TimestampColumns,
+  QueryFeature,
 } from "../Enums";
 import ApiError from "../Exceptions/ApiError";
 import { IoCService, ModelListService } from "../Services";
 import { SerializationFunction } from "../Types";
+import { valideteQueryFeature } from "../Services/LimitService";
+import { RelationQueryFeatureMap } from "../constants";
 
 export const bindTimestampValues = (
   formData: Record<string, any>,
@@ -249,6 +252,14 @@ export const getRelatedData = async (
     if (!foreignModel) {
       continue;
     }
+
+    // Validating the query limit
+    valideteQueryFeature(
+      model,
+      RelationQueryFeatureMap[definedRelation.type],
+      `${model.instance.table}.${definedRelation.name}`,
+      `${model.instance.table}.${definedRelation.name}`
+    );
 
     let dataField = "primaryKey";
     let searchField = "foreignKey";
