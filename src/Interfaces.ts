@@ -1,6 +1,6 @@
 import { Knex } from "knex";
 import { NextFunction, Request, Response, Express } from "express";
-import { FastifyRequest, FastifyReply } from "fastify";
+// import { FastifyRequest, FastifyReply } from "fastify";
 import { Column } from "knex-schema-inspector/lib/types/column";
 import {
   HandlerTypes,

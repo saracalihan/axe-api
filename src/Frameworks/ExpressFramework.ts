@@ -1,13 +1,25 @@
 import { IFramework, IFrameworkHandler } from "../Interfaces";
-import express, { Express } from "express";
+import { IoCService, LogService } from "../Services";
 
 class ExpressFramework implements IFramework {
-  client: Express;
+  client: any;
   _name: string;
 
   constructor() {
-    this.client = express();
-    this._name = "express";
+    try {
+      const expressModule = require('express').default;
+      const express = expressModule.default, { Express } = expressModule;
+
+      this.client = express() as typeof Express; 
+      this._name = "express";
+    } catch (error: any) {
+      if(error.code === 'MODULE_NOT_FOUND'){
+        IoCService.use("LogService").then( (loggerService: LogService) => {
+          loggerService.error(`Express framework didn't install. Run: "npm install express"`);
+        });
+      }
+      throw error;
+    }
   }
 
   get(url: string, middleware: IFrameworkHandler | IFrameworkHandler[], handler?: IFrameworkHandler) {

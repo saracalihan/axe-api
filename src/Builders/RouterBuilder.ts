@@ -93,8 +93,8 @@ class RouterBuilder {
         ...model.instance.getMiddlewares(handlerType),
       ];
 
-      // Adding the route to the express
-      await this.addExpressRoute(
+      // Adding the route to the API
+      await this.addApiRoute(
         handlerType,
         url,
         middlewares,
@@ -184,7 +184,7 @@ class RouterBuilder {
     return value.charAt(0).toUpperCase() + value.slice(1);
   };
 
-  private async addExpressRoute(
+  private async addApiRoute(
     handlerType: HandlerTypes,
     url: string,
     middlewares: ((req: IRequest, res: IResponse, next: NextFunction) => void)[],
