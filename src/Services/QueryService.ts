@@ -1,4 +1,9 @@
-import { Relationships, ConditionTypes, SortTypes } from "../Enums";
+import {
+  Relationships,
+  ConditionTypes,
+  SortTypes,
+  QueryFeature,
+} from "../Enums";
 import {
   IRawQuery,
   IQuery,
@@ -11,6 +16,10 @@ import {
 import { Knex } from "knex";
 import ApiError from "../Exceptions/ApiError";
 import { WithQueryResolver } from "../Resolvers";
+import { ConditionQueryFeatureMap } from "../constants";
+import { valideteQueryFeature } from "./LimitService";
+
+const DEFAULT_PER_PAGE = 10;
 
 class QueryService {
   model: IModelService;
@@ -30,6 +39,7 @@ class QueryService {
   applyFields(query: Knex.QueryBuilder, fields: string[]) {
     // Users should be able to select some fields to show.
     if (fields.length === 0 || (fields.length === 1 && fields[0] === "*")) {
+      valideteQueryFeature(this.model, QueryFeature.FieldsAll);
       query.select(`${this.model.instance.table}.*`);
     } else {
       const fullPathFields = fields.map((field) => {
@@ -47,7 +57,10 @@ class QueryService {
       return;
     }
 
+    valideteQueryFeature(this.model, QueryFeature.Sorting);
+
     sort.forEach((item) => {
+      valideteQueryFeature(this.model, QueryFeature.Sorting, item.name);
       query.orderBy(item.name, item.type);
     });
   }
@@ -228,6 +241,10 @@ class QueryService {
         : false,
     };
 
+    if (query.per_page !== DEFAULT_PER_PAGE) {
+      valideteQueryFeature(this.model, QueryFeature.Limits);
+    }
+
     this.addRelationColumns(query.with);
 
     return query;
@@ -251,7 +268,7 @@ class QueryService {
     const value = parseInt(content);
 
     if (isNaN(value) || value <= 1 || value > 10000) {
-      return 10;
+      return DEFAULT_PER_PAGE;
     }
 
     return value;
@@ -432,6 +449,12 @@ class QueryService {
       where.relation = relation;
       where.field = field;
     }
+
+    valideteQueryFeature(
+      this.model,
+      ConditionQueryFeatureMap[where.condition],
+      `${where.table}.${where.field}`
+    );
 
     this.shouldBeAcceptableColumn(where.field);
     this.usedConditionColumns.push(`${where.table}.${where.field}`);

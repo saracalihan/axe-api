@@ -1,5 +1,5 @@
 import { Knex } from "knex";
-import { NextFunction, Request, Response, Express } from "express";
+import { NextFunction, Express } from "express";
 // import { FastifyRequest, FastifyReply } from "fastify";
 import { Column } from "knex-schema-inspector/lib/types/column";
 import {
@@ -13,8 +13,13 @@ import {
   ConditionTypes,
   DependencyTypes,
   Frameworks,
+  QueryFeature,
+  QueryFeatureType,
 } from "./Enums";
 import Model from "./Model";
+import { SerializationFunction } from "./Types";
+import { ModelListService } from "./Services";
+import { ExpressHandler } from "./Frameworks/ExpressFramework";
 
 export interface IColumn extends Column {
   table_name: string;
@@ -33,11 +38,17 @@ interface IHandlerBasedSerializer {
   serializer: ((data: any, request: IRequest) => void)[];
 }
 
-export interface IApplicationConfig extends IConfig {
-  env: string;
-  port: number;
-  logLevel: LogLevels;
-  prefix: string;
+export interface IQueryLimitConfig {
+  feature: QueryFeature;
+  type: QueryFeatureType;
+  key: string | null;
+}
+
+export interface IQueryConfig {
+  limits: Array<IQueryLimitConfig[]>;
+}
+
+export interface IVersionConfig {
   transaction:
     | boolean
     | IHandlerBasedTransactionConfig
@@ -47,6 +58,15 @@ export interface IApplicationConfig extends IConfig {
     | IHandlerBasedSerializer[];
   supportedLanguages: string[];
   defaultLanguage: string;
+  query: IQueryConfig;
+}
+
+export interface IApplicationConfig extends IConfig {
+  env: string;
+  port: number;
+  logLevel: LogLevels;
+  prefix: string;
+  database: IDatabaseConfig;
   framework: Frameworks;
 }
 
@@ -63,13 +83,29 @@ export interface IAcceptedLanguage {
 
 export type IDatabaseConfig = Knex.Config;
 
-export interface IFolders {
-  App: string;
-  Config: string;
-  Events: string;
-  Hooks: string;
-  Middlewares: string;
-  Models: string;
+export interface IVersionFolder {
+  root: string;
+  config: string;
+  events: string;
+  hooks: string;
+  middlewares: string;
+  models: string;
+  serialization: string;
+}
+
+export interface IVersion {
+  name: string;
+  config: IVersionConfig;
+  folders: IVersionFolder;
+  modelList: ModelListService;
+  modelTree: IModelService[];
+}
+
+export interface IAPI {
+  rootFolder: string;
+  appFolder: string;
+  versions: IVersion[];
+  config: IApplicationConfig;
 }
 
 export interface IGeneralHooks {
@@ -122,6 +158,8 @@ export interface IModelService {
   events: Record<HookFunctionTypes, (params: IHookParameter) => void>;
   isRecursive: boolean;
   children: IModelService[];
+  queryLimits: IQueryLimitConfig[];
+  serialize: SerializationFunction | null;
 
   setColumns(columns: IColumn[]): void;
   setExtensions(
@@ -129,6 +167,8 @@ export interface IModelService {
     hookFunctionType: HookFunctionTypes,
     data: (params: IHookParameter) => void
   ): void;
+  setQueryLimits(limits: IQueryLimitConfig[]): void;
+  setSerialization(callback: SerializationFunction): void;
 }
 
 export interface IRelation {
@@ -140,6 +180,8 @@ export interface IRelation {
 }
 
 export interface IRequestPack {
+  api: IAPI;
+  version: IVersion;
   req: IRequest;
   res: IResponse;
   handlerType: HandlerTypes;
@@ -210,11 +252,11 @@ export interface IDependency {
 }
 
 // FIXME: Check return type
-export type IFrameworkHandler = ( req: IRequest, res: IResponse, next: any ) => Promise<any> | void; 
+export type IFrameworkHandler = ExpressHandler; //|( req: IRequest, res: IResponse, next: any ) => Promise<any> | void; 
 
 export interface IFramework {
   client: Express | any;
-  _name: string;
+  _name: Frameworks;
   //get(url: string, handler: IFrameworkHandler): any;
   get(url: string, middleware: IFrameworkHandler | IFrameworkHandler[] , handler?: IFrameworkHandler): any;
   //post(url: string, handler: IFrameworkHandler): any;
@@ -228,6 +270,42 @@ export interface IFramework {
   use(middleware: IFrameworkHandler): any
   listen(port: number, fn: ()=> void): any;
   kill(): void;
+}
+
+export interface AxeRequest {
+  url: string;
+  method: string;
+  body: ReadableStream<Uint8Array> | any;
+  baseUrl: string;
+  hostname: string;
+  ip: string;
+  ips: string;
+  originalUrl: string;
+  params: any;
+  path: string;
+  protocol: 'http' | 'https';
+  query: any;
+  type: string;
+  currentLanguage: any;
+  getHeader(name: string): string | null;
+  setHeader(name: string, value: any): void;
+  deleteHeader(name: string): void;
+  param(name: string): any;
+}
+
+export interface AxeResponse {
+  appand(name: string, value: any): void;
+  //attachment(path: string): void;
+  setCookie(name: string, value: string, options: any): void;
+  clearCookie(name: string, options: any): void;
+  status(status: number): AxeResponse;
+  getHeader(name: string): string | null;
+  getHeaders(): Record<string, string> | null;
+  setHeader(name: string, value: string): void;
+  deleteHeader(name: string): void;
+  redirect(url: string): void;
+  send(data?: any): void;
+  json(data?: any): void;
 }
 
 // export interface IRequest {
@@ -248,6 +326,8 @@ export interface IFramework {
 
 // export type IFramework = Express | Fastify;
 
-export type IRequest = Request; //|  FastifyRequest;
 
-export type IResponse = Response; // | FastifyReply;
+
+export type IRequest = AxeRequest; //|  FastifyRequest;
+
+export type IResponse = AxeResponse; // | FastifyReply;

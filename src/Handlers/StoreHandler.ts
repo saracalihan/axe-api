@@ -16,7 +16,7 @@ import {
 } from "../Enums";
 
 export default async (pack: IRequestPack) => {
-  const { model, req, res, database, relation, parentModel } = pack;
+  const { version, model, req, res, database, relation, parentModel } = pack;
 
   const requestMethod: HttpMethods = req.method as unknown as HttpMethods;
   const fillables = model.instance.getFillableFields(requestMethod);
@@ -79,8 +79,9 @@ export default async (pack: IRequestPack) => {
 
   // Serializing the data by the model's serialize method
   item = await serializeData(
+    version,
     item,
-    model.instance.serialize,
+    model.serialize,
     HandlerTypes.INSERT,
     req
   );

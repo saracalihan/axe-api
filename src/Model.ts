@@ -9,6 +9,7 @@ import {
   IHandlerBasedTransactionConfig,
   IRequest,
   IResponse,
+  IQueryLimitConfig,
 } from "./Interfaces";
 import { Relationships, HandlerTypes, HttpMethods } from "./Enums";
 import { DEFAULT_HANDLERS } from "./constants";
@@ -67,6 +68,10 @@ class Model {
 
   get ignore(): boolean {
     return false;
+  }
+
+  get limits(): Array<IQueryLimitConfig[]> {
+    return [];
   }
 
   getFillableFields(methodType: HttpMethods): string[] {
@@ -172,11 +177,6 @@ class Model {
 
   belongsTo(relatedModel: string, primaryKey: string, foreignKey: string) {
     return this.hasOne(relatedModel, foreignKey, primaryKey);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  serialize(data: any, request: IRequest) {
-    return data;
   }
 
   private hasStringValue() {

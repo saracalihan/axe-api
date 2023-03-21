@@ -5,6 +5,7 @@ import {
   IApplicationConfig,
   IHookParameter,
   IQuery,
+  IVersion,
 } from "../Interfaces";
 import { Knex } from "knex";
 import { IWith, IRequest } from "../Interfaces";
@@ -13,9 +14,13 @@ import {
   Relationships,
   HookFunctionTypes,
   TimestampColumns,
+  QueryFeature,
 } from "../Enums";
 import ApiError from "../Exceptions/ApiError";
 import { IoCService, ModelListService } from "../Services";
+import { SerializationFunction } from "../Types";
+import { valideteQueryFeature } from "../Services/LimitService";
+import { RelationQueryFeatureMap } from "../constants";
 
 export const bindTimestampValues = (
   formData: Record<string, any>,
@@ -42,7 +47,7 @@ export const getMergedFormData = (
   fillables: string[]
 ): Record<string, any> => {
   const formData: Record<string, any> = {};
-  Object.keys(req.body).forEach((key) => {
+  Object.keys(req?.body || {}).forEach((key) => {
     if (fillables.includes(key)) {
       formData[key] = req.body[key];
     }
@@ -114,7 +119,7 @@ const uniqueByMap = <T>(array: T[]): T[] => {
 
 const serialize = (
   data: any[] | any,
-  callback: (data: any, request: IRequest) => void,
+  callback: SerializationFunction | null,
   request: IRequest
 ): any[] | any => {
   if (!callback) {
@@ -129,19 +134,18 @@ const serialize = (
 };
 
 const globalSerializer = async (
+  version: IVersion,
   itemArray: any[] | any,
   handler: HandlerTypes,
   request: IRequest
 ) => {
-  const Application = await IoCService.useByType<IApplicationConfig>("Config");
-
-  if (!Application.serializers) {
+  if (!version.config.serializers) {
     return itemArray;
   }
 
   const callbacks: ((data: any, request: IRequest) => void)[] = [];
   // Push all runable serializer into callbacks.
-  Application.serializers.map((configSerializer) => {
+  version.config.serializers.map((configSerializer) => {
     // Serialize data for all requests types.
     if (typeof configSerializer === "function") {
       callbacks.push(
@@ -170,13 +174,14 @@ const globalSerializer = async (
 };
 
 export const serializeData = async (
+  version: IVersion,
   itemArray: any[] | any,
-  modelSerializer: (data: any, request: IRequest) => void,
+  modelSerializer: SerializationFunction | null,
   handler: HandlerTypes,
   request: IRequest
 ): Promise<any[]> => {
   itemArray = serialize(itemArray, modelSerializer, request);
-  itemArray = await globalSerializer(itemArray, handler, request);
+  itemArray = await globalSerializer(version, itemArray, handler, request);
   return itemArray;
 };
 
@@ -214,6 +219,7 @@ export const addSoftDeleteQuery = (
 };
 
 export const getRelatedData = async (
+  version: IVersion,
   data: any[],
   withArray: IWith[],
   model: IModelService,
@@ -245,6 +251,14 @@ export const getRelatedData = async (
     if (!foreignModel) {
       continue;
     }
+
+    // Validating the query limit
+    valideteQueryFeature(
+      model,
+      RelationQueryFeatureMap[definedRelation.type],
+      `${model.instance.table}.${definedRelation.name}`,
+      `${model.instance.table}.${definedRelation.name}`
+    );
 
     let dataField = "primaryKey";
     let searchField = "foreignKey";
@@ -324,8 +338,9 @@ export const getRelatedData = async (
 
     // We should serialize related data if there is any serialization function
     relatedRecords = await serializeData(
+      version,
       relatedRecords,
-      foreignModel.instance.serialize,
+      foreignModel.serialize,
       handler,
       request
     );
@@ -336,6 +351,7 @@ export const getRelatedData = async (
     // We should try to get child data if there is any on the query
     if (clientQuery.children.length > 0) {
       await getRelatedData(
+        version,
         relatedRecords,
         clientQuery.children,
         foreignModel,

@@ -1,92 +1,86 @@
-import { FolderResolver, FileResolver, ModelResolver } from "./Resolvers";
+import {
+  ModelResolver,
+  VersionConfigResolver,
+  VersionResolver,
+} from "./Resolvers";
+import { IApplicationConfig } from "./Interfaces";
 import dotenv from "dotenv";
+import path from "path";
 import knex from "knex";
 import schemaInspector from "knex-schema-inspector";
 import { attachPaginate } from "knex-paginate";
 import { ModelTreeBuilder, RouterBuilder } from "./Builders";
-import HandlerFactory from "./Handlers/HandlerFactory";
 import {
-  IApplicationConfig,
-  IConfig,
-  IFolders,
-  IRequest,
-  IResponse,
-} from "./Interfaces";
-import {
-  DocumentationService,
   LogService,
   IoCService,
+  APIService,
   SchemaValidatorService,
 } from "./Services";
 import { Frameworks } from "./Enums";
 import ExpressFramework from "./Frameworks/ExpressFramework";
 import FastifyFramework from "./Frameworks/FastifyFramework";
+import DocsHandler from "./Handlers/DocsHandler";
+import RoutesHandler from "./Handlers/RoutesHandler";
+import { consoleAxeError } from "./Helpers";
 
 class Server {
-  async start(appFolder: string) {
+  async start(rootFolder: string) {
     dotenv.config();
-    const folders = new FolderResolver().resolve(appFolder);
-    const fileResolver = new FileResolver();
-    const config = await fileResolver.resolve<IConfig>(folders.Config);
-    const models = await fileResolver.resolve<IConfig>(folders.Models);
-    await this.bindDependencies(folders, config, models);
-    await this.loadFramework();
-    await this.analyzeModels();
-    await this.listen();
+
+    try {
+      await this.bindDependencies(rootFolder);
+      await this.loadGeneralConfiguration();
+      await this.loadFramework();
+      await this.analyzeVersions();
+      await this.listen();
+    } catch (error: any) {
+      if (error.type === "AxeError") {
+        consoleAxeError(error);
+      } else {
+        throw error;
+      }
+    }
   }
 
-  private async bindDependencies(
-    folders: IFolders,
-    config: Record<string, IConfig>,
-    models: Record<string, IConfig>
-  ) {
-    IoCService.singleton("Folders", () => folders);
-    IoCService.singleton("Config", () => config);
-    IoCService.singleton("Models", () => models);
-    IoCService.singleton("SchemaInspector", () => schemaInspector);
-    IoCService.singleton("Database", async () => {
-      const config = await IoCService.use("Config");
-      const database = knex(config.Database);
-      attachPaginate();
-      return database;
-    });
-    IoCService.singleton("Framework", async () => {
-      let framework = null, frameworkName = (config.Application as IApplicationConfig).framework || Frameworks.Express;
-      if (frameworkName == Frameworks.Fastify) {
-        framework = new FastifyFramework();
-      } else {
-        framework = new ExpressFramework();
-      }
+  private async bindDependencies(rootFolder: string) {
+    APIService.setInsance(rootFolder);
+    const api = APIService.getInstance();
+    LogService.setInstance(api.config.logLevel);
 
+    IoCService.singleton("Framework", async () => {
+      let framework = null, f = null;
+      const frameworkName = api.config.framework;
+      switch (frameworkName) {
+        case Frameworks.Fastify:
+          f = (await import('fastify')).default;
+          framework = new FastifyFramework(f);
+          break;
+        default:
+        case Frameworks.Express:
+          // Express is default fremework
+          f = (await import('express')).default;
+          framework = new ExpressFramework(f);
+      }
       return framework;
     });
-
     IoCService.singleton("App", async () => await IoCService.use("Framework"));
-    IoCService.singleton("HandlerFactory", () => {
-      return new HandlerFactory();
-    });
-
-    IoCService.singleton(
-      "DocumentationService",
-      async () => new DocumentationService()
-    );
-    IoCService.singleton("LogService", async () => {
-      const config = await IoCService.use("Config");
-      return new LogService(
-        (config.Application as IApplicationConfig).logLevel
-      );
+    IoCService.singleton("SchemaInspector", () => schemaInspector);
+    IoCService.singleton("Database", async () => {
+      const database = knex(api.config.database);
+      attachPaginate();
+      return database;
     });
   }
 
   private async loadFramework() {
     const app = await IoCService.use("App");
     const framework = await IoCService.use("Framework");
-    const logger = await IoCService.useByType<LogService>("LogService");
 
-    // Set global middlewares for axe-api
+    // Set global framework middlewares for axe-api
     switch (framework._name) {
       default:
       case Frameworks.Express:
+        // eslint-disable-next-line no-case-declarations
         const { urlencoded, json } = await import("express");
         app.use(urlencoded({ extended: true }));
         app.use(json());
@@ -94,43 +88,43 @@ class Server {
       case Frameworks.Fastify:
         break;
     }
+    const logger = LogService.getInstance();
     logger.info(`${app._name} has been initialized`);
   }
 
-  private async analyzeModels() {
-    await new ModelResolver().resolve();
-    await new SchemaValidatorService().validate();
-    await new ModelTreeBuilder().build();
-    await new RouterBuilder().build();
+  private async analyzeVersions() {
+    const api = APIService.getInstance();
+    await new VersionResolver().resolve();
+
+    for (const version of api.versions) {
+      await new VersionConfigResolver(version).resolve();
+      await new ModelResolver(version).resolve();
+      await new SchemaValidatorService(version).validate();
+      await new ModelTreeBuilder(version).build();
+      await new RouterBuilder(version).build();
+    }
+  }
+
+  private async loadGeneralConfiguration() {
+    const api = APIService.getInstance();
+    const generalConfigFile = path.join(api.appFolder, "config");
+    const { default: content } = await import(generalConfigFile);
+    api.setConfig(content as IApplicationConfig);
   }
 
   private async listen() {
-    const config = await IoCService.use("Config");
     const app = await IoCService.use("App");
-    const logger = await IoCService.useByType<LogService>("LogService");
+    const logger = LogService.getInstance();
+    const api = APIService.getInstance();
 
-    if (config.Application.env === "development") {
-      app.get("/docs", async (req: IRequest, res: IResponse) => {
-        const docs = await IoCService.useByType<DocumentationService>(
-          "DocumentationService"
-        );
-        const modelTree = await IoCService.use("ModelTree");
-        res.json({
-          routes: docs.get(),
-          modelTree,
-        });
-      });
-      app.get("/docs/routes", async (req: IRequest, res: IResponse) => {
-        const docs = await IoCService.useByType<DocumentationService>(
-          "DocumentationService"
-        );
-        res.json(docs.get().map((route) => `${route.method} ${route.url}`));
-      });
+    if (api.config.env === "development") {
+      app.get("/docs", DocsHandler);
+      app.get("/routes", RoutesHandler);
     }
 
-    app.listen(config.Application.port, () => {
+    app.listen(api.config.port, () => {
       logger.info(
-        `API listens requests on http://localhost:${config.Application.port}`
+        `API listens requests on http://localhost:${api.config.port}`
       );
     });
   }

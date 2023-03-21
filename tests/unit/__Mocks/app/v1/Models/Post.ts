@@ -1,14 +1,19 @@
 import { NextFunction } from "express";
-import { ParamsDictionary } from "express-serve-static-core";
-import { ParsedQs } from "qs";
-import { HandlerTypes, HttpMethods } from "../../../src/Enums";
+import {
+  HandlerTypes,
+  HttpMethods,
+  QueryFeature,
+} from "../../../../../../src/Enums";
 import {
   IHandlerBasedTransactionConfig,
   IHandlerBaseMiddleware,
   IMethodBaseConfig,
   IMethodBaseValidations,
-} from "../../../src/Interfaces";
-import Model from "../../../src/Model";
+  IRequest,
+  IResponse,
+} from "../../../../../../src/Interfaces";
+import Model from "../../../../../../src/Model";
+import { allow } from "../../../../../../src/Services";
 
 class Post extends Model {
   get fillable(): IMethodBaseConfig {
@@ -30,7 +35,9 @@ class Post extends Model {
   get middlewares(): IHandlerBaseMiddleware {
     return {
       handler: [HandlerTypes.PAGINATE, HandlerTypes.INSERT],
-      middleware: () => {},
+      middleware: (req: IRequest, res: IResponse, next: NextFunction) => {
+        next();
+      },
     };
   }
 
@@ -39,6 +46,10 @@ class Post extends Model {
       handler: HandlerTypes.INSERT,
       transaction: true,
     };
+  }
+
+  get limits() {
+    return [allow(QueryFeature.All)];
   }
 
   comments() {
