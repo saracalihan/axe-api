@@ -11,10 +11,12 @@ import {
   IWhere,
   IModelService,
   IQuery,
+  IVersionConfig,
 } from "../../../src/Interfaces";
 import User from "../__Mocks/app/v1/Models/User";
 import Post from "../__Mocks/app/v1/Models/Post";
 import Comment from "../__Mocks/app/v1/Models/Comment";
+import { DEFAULT_VERSION_CONFIG } from "../../../src/constants";
 
 const userService = new ModelService("User", new User());
 userService.columnNames = ["name", "surname"];
@@ -38,11 +40,14 @@ userService.queryLimits = [
 const postService = new ModelService("Post", new Post());
 const commentService = new ModelService("Comment", new Comment());
 const models: IModelService[] = [userService, postService, commentService];
-let service = new QueryService(userService, models);
+const config: IVersionConfig = {
+  ...DEFAULT_VERSION_CONFIG,
+};
+let service = new QueryService(userService, models, config);
 
 describe("QueryService", () => {
   beforeEach(() => {
-    service = new QueryService(userService, models);
+    service = new QueryService(userService, models, config);
   });
 
   test(".get() should be able to return the defaults", async () => {

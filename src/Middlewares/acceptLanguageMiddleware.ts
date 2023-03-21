@@ -1,8 +1,7 @@
 import { NextFunction } from "express";
 import { AcceptLanguageResolver } from "../Resolvers";
 import { getVersionByRequest } from "../Helpers";
-import { AxeRequest, IRequest, IResponse } from "src/Interfaces";
-import { ExpressRequest } from "src/Frameworks/ExpressFramework";
+import { IRequest, IResponse } from "src/Interfaces";
 
 export default async (req: IRequest, res: IResponse, next: NextFunction) => {
   // Application configuration is need for the default setting.

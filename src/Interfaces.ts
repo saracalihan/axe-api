@@ -61,6 +61,36 @@ export interface IVersionConfig {
   query: IQueryConfig;
 }
 
+export interface IQueryLimitConfig {
+  feature: QueryFeature;
+  type: QueryFeatureType;
+  key: string | null;
+}
+
+export interface IQueryDefaultConfig {
+  perPage?: number;
+  minPerPage?: number;
+  maxPerPage?: number;
+}
+
+export interface IQueryConfig {
+  limits: Array<IQueryLimitConfig[]>;
+  defaults?: IQueryDefaultConfig;
+}
+
+export interface IVersionConfig {
+  transaction:
+    | boolean
+    | IHandlerBasedTransactionConfig
+    | IHandlerBasedTransactionConfig[];
+  serializers:
+    | ((data: any, request: IRequest) => void)[]
+    | IHandlerBasedSerializer[];
+  supportedLanguages: string[];
+  defaultLanguage: string;
+  query: IQueryConfig;
+}
+
 export interface IApplicationConfig extends IConfig {
   env: string;
   port: number;

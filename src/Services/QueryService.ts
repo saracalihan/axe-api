@@ -12,14 +12,14 @@ import {
   IWhere,
   IWith,
   IModelService,
+  IVersionConfig,
 } from "../Interfaces";
 import { Knex } from "knex";
 import ApiError from "../Exceptions/ApiError";
 import { WithQueryResolver } from "../Resolvers";
-import { ConditionQueryFeatureMap } from "../constants";
+import { ConditionQueryFeatureMap, DEFAULT_VERSION_CONFIG } from "../constants";
 import { valideteQueryFeature } from "./LimitService";
-
-const DEFAULT_PER_PAGE = 10;
+import { isBoolean } from "../Handlers/Helpers";
 
 class QueryService {
   model: IModelService;
@@ -27,10 +27,16 @@ class QueryService {
   usedConditionColumns: string[];
   relationColumns: string[];
   createdJoins: string[];
+  config: IVersionConfig;
 
-  constructor(model: IModelService, models: IModelService[]) {
+  constructor(
+    model: IModelService,
+    models: IModelService[],
+    config: IVersionConfig
+  ) {
     this.model = model;
     this.models = models;
+    this.config = config;
     this.createdJoins = [];
     this.relationColumns = [];
     this.usedConditionColumns = [];
@@ -60,7 +66,11 @@ class QueryService {
     valideteQueryFeature(this.model, QueryFeature.Sorting);
 
     sort.forEach((item) => {
-      valideteQueryFeature(this.model, QueryFeature.Sorting, item.name);
+      valideteQueryFeature(
+        this.model,
+        QueryFeature.Sorting,
+        `${this.model.instance.table}.${item.name}`
+      );
       query.orderBy(item.name, item.type);
     });
   }
@@ -236,12 +246,14 @@ class QueryService {
       sort: this.parseSortingOptions(sections.sort),
       q: this.parseCondition(sections.q),
       with: withQueryResolver.resolve(sections?.with || ""),
-      trashed: sections?.trashed
-        ? sections.trashed.trim() === "true" || sections.trashed.trim() === "1"
-        : false,
+      trashed: sections?.trashed ? isBoolean(sections.trashed) : false,
     };
 
-    if (query.per_page !== DEFAULT_PER_PAGE) {
+    const configPerPage =
+      this.config?.query.defaults?.perPage ||
+      DEFAULT_VERSION_CONFIG.query?.defaults?.perPage ||
+      10;
+    if (query.per_page !== configPerPage) {
       valideteQueryFeature(this.model, QueryFeature.Limits);
     }
 
@@ -265,10 +277,29 @@ class QueryService {
   }
 
   private parsePerPage(content: any) {
-    const value = parseInt(content);
+    const value = parseInt(
+      content ||
+        this.config.query?.defaults?.perPage ||
+        DEFAULT_VERSION_CONFIG.query.defaults?.perPage ||
+        10
+    );
 
-    if (isNaN(value) || value <= 1 || value > 10000) {
-      return DEFAULT_PER_PAGE;
+    const minPerPage =
+      this.config.query?.defaults?.minPerPage ||
+      DEFAULT_VERSION_CONFIG.query.defaults?.minPerPage ||
+      1;
+
+    const maxPerPage =
+      this.config.query?.defaults?.maxPerPage ||
+      DEFAULT_VERSION_CONFIG.query.defaults?.maxPerPage ||
+      100;
+
+    if (isNaN(value) || value <= minPerPage || value > maxPerPage) {
+      return (
+        this.config.query?.defaults?.perPage ||
+        DEFAULT_VERSION_CONFIG.query.defaults?.perPage ||
+        10
+      );
     }
 
     return value;

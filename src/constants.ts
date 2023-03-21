@@ -4,6 +4,8 @@ import {
   QueryFeature,
   Relationships,
 } from "./Enums";
+import { IVersionConfig } from "./Interfaces";
+import { allow, deny } from "./Services/LimitService";
 
 export const LOG_COLORS = {
   fgBlack: "\x1b[30m",
@@ -103,68 +105,6 @@ export const API_ROUTE_TEMPLATES = {
   ) => `/${prefix}/${parentUrl}${resource}/:${primaryKey}/force`,
 };
 
-export const QueryFeatureMap: Record<QueryFeature, Array<QueryFeature>> = {
-  [QueryFeature.All]: [
-    QueryFeature.FieldsAll,
-    QueryFeature.Sorting,
-    QueryFeature.Limits,
-    QueryFeature.WhereEqual,
-    QueryFeature.WhereNotEqual,
-    QueryFeature.WhereGt,
-    QueryFeature.WhereGte,
-    QueryFeature.WhereLt,
-    QueryFeature.WhereLte,
-    QueryFeature.WhereLike,
-    QueryFeature.WhereNotLike,
-    QueryFeature.WhereIn,
-    QueryFeature.WhereNotIn,
-    QueryFeature.WhereBetween,
-    QueryFeature.WhereNotBetween,
-    QueryFeature.WhereNull,
-    QueryFeature.WhereNotNull,
-    QueryFeature.Trashed,
-    QueryFeature.WithHasOne,
-    QueryFeature.WithHasMany,
-  ],
-  [QueryFeature.FieldsAll]: [QueryFeature.FieldsAll],
-  [QueryFeature.Sorting]: [QueryFeature.Sorting],
-  [QueryFeature.Limits]: [QueryFeature.Limits],
-  [QueryFeature.WhereAll]: [
-    QueryFeature.WhereEqual,
-    QueryFeature.WhereNotEqual,
-    QueryFeature.WhereGt,
-    QueryFeature.WhereGte,
-    QueryFeature.WhereLt,
-    QueryFeature.WhereLte,
-    QueryFeature.WhereLike,
-    QueryFeature.WhereNotLike,
-    QueryFeature.WhereIn,
-    QueryFeature.WhereNotIn,
-    QueryFeature.WhereBetween,
-    QueryFeature.WhereNotBetween,
-    QueryFeature.WhereNull,
-    QueryFeature.WhereNotNull,
-  ],
-  [QueryFeature.WhereEqual]: [QueryFeature.WhereEqual],
-  [QueryFeature.WhereNotEqual]: [QueryFeature.WhereNotEqual],
-  [QueryFeature.WhereGt]: [QueryFeature.WhereGt],
-  [QueryFeature.WhereGte]: [QueryFeature.WhereGte],
-  [QueryFeature.WhereLt]: [QueryFeature.WhereLt],
-  [QueryFeature.WhereLte]: [QueryFeature.WhereLte],
-  [QueryFeature.WhereLike]: [QueryFeature.WhereLike],
-  [QueryFeature.WhereNotLike]: [QueryFeature.WhereNotLike],
-  [QueryFeature.WhereIn]: [QueryFeature.WhereIn],
-  [QueryFeature.WhereNotIn]: [QueryFeature.WhereNotIn],
-  [QueryFeature.WhereBetween]: [QueryFeature.WhereBetween],
-  [QueryFeature.WhereNotBetween]: [QueryFeature.WhereNotBetween],
-  [QueryFeature.WhereNull]: [QueryFeature.WhereNull],
-  [QueryFeature.WhereNotNull]: [QueryFeature.WhereNotNull],
-  [QueryFeature.Trashed]: [QueryFeature.Trashed],
-  [QueryFeature.WithAll]: [QueryFeature.WithHasOne, QueryFeature.WithHasMany],
-  [QueryFeature.WithHasOne]: [QueryFeature.WithHasOne],
-  [QueryFeature.WithHasMany]: [QueryFeature.WithHasMany],
-};
-
 export const ConditionQueryFeatureMap: Record<ConditionTypes, QueryFeature> = {
   [ConditionTypes.NotNull]: QueryFeature.WhereNotNull,
   [ConditionTypes.Null]: QueryFeature.WhereNull,
@@ -185,4 +125,25 @@ export const ConditionQueryFeatureMap: Record<ConditionTypes, QueryFeature> = {
 export const RelationQueryFeatureMap: Record<Relationships, QueryFeature> = {
   [Relationships.HAS_ONE]: QueryFeature.WithHasOne,
   [Relationships.HAS_MANY]: QueryFeature.WithHasMany,
+};
+
+export const DEFAULT_VERSION_CONFIG: IVersionConfig = {
+  transaction: false,
+  serializers: [],
+  supportedLanguages: ["en"],
+  defaultLanguage: "en",
+  query: {
+    limits: [
+      allow(QueryFeature.All),
+      deny(QueryFeature.WithHasMany),
+      deny(QueryFeature.WhereLike),
+      deny(QueryFeature.WhereNotLike),
+      deny(QueryFeature.Trashed),
+    ],
+    defaults: {
+      perPage: 10,
+      minPerPage: 1,
+      maxPerPage: 100,
+    },
+  },
 };
